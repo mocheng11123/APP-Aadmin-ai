@@ -1,0 +1,34 @@
+# iApp 管家 API URL 重写配置
+# 将所有请求指向 index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /iapp_api/
+
+    # 排除真实存在的文件和目录
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # 所有其他请求转发到 index.php
+    RewriteRule ^(.*)$ index.php/$1 [L,QSA]
+</IfModule>
+
+# 安全设置
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# 禁止访问配置文件
+<FilesMatch "^(config|core|controllers|models|utils)\.php$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# 设置默认字符集
+AddDefaultCharset UTF-8
+
+# 启用 Gzip 压缩
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json application/xml
+</IfModule>

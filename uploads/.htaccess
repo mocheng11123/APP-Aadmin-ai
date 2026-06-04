@@ -1,0 +1,29 @@
+# uploads 目录配置
+# 此目录用于存放 APK 和启动图等文件
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # 禁止执行 PHP 文件（安全考虑）
+    RewriteRule \.php$ - [F,L]
+</IfModule>
+
+# 设置正确的 MIME 类型
+<IfModule mod_mime.c>
+    AddType application/vnd.android.package-archive .apk
+    AddType image/png .png
+    AddType image/jpeg .jpg .jpeg
+    AddType image/gif .gif
+</IfModule>
+
+# 启用缓存（静态资源）
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType application/vnd.android.package-archive "access plus 1 week"
+</IfModule>
+
+# 禁止目录浏览
+Options -Indexes

@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iApp 管家 - 管理后台</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- JSONEditor -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.10.0/jsoneditor.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --header-height: 56px;
+            --primary-color: #4e73df;
+            --sidebar-bg: #1a1d2e;
+            --sidebar-hover: #2c304e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fc;
+            overflow-x: hidden;
+        }
+        
+        /* 登录页面样式 */
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        }
+        
+        .auth-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .auth-header i {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        
+        .auth-header h2 {
+            color: #333;
+            font-weight: 700;
+        }
+        
+        .auth-form .form-control {
+            height: 48px;
+            border-radius: 8px;
+            border: 1px solid #e3e6e9;
+            padding: 0 15px;
+            font-size: 15px;
+        }
+        
+        .auth-form .btn-primary {
+            height: 48px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .auth-switch {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+        
+        .auth-switch a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        /* 主界面布局 */
+        .main-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* 侧边栏 */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            transition: transform 0.3s;
+            z-index: 1000;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .sidebar-header i {
+            font-size: 28px;
+            color: #4e73df;
+        }
+        
+        .sidebar-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .sidebar-section {
+            padding: 15px 20px;
+        }
+        
+        .sidebar-section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.4);
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        
+        .app-list {
+            list-style: none;
+        }
+        
+        .app-item {
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .app-item:hover {
+            background: var(--sidebar-hover);
+        }
+        
+        .app-item.active {
+            background: var(--primary-color);
+        }
+        
+        .app-item i {
+            font-size: 16px;
+        }
+        
+        .app-item-name {
+            flex: 1;
+            font-size: 14px;
+        }
+        
+        .app-item-role {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .create-app-btn {
+            width: 100%;
+            padding: 10px;
+            border: 1px dashed rgba(255,255,255,0.3);
+            background: transparent;
+            color: rgba(255,255,255,0.6);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        
+        .create-app-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background: rgba(78,115,223,0.1);
+        }
+        
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+        }
+        
+        .top-navbar {
+            height: var(--header-height);
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+        
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #666;
+            cursor: pointer;
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+        
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .logout-btn {
+            background: #f8f9fa;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background: #e9ecef;
+            color: #dc3545;
+        }
+        
+        /* 内容区域 */
+        .content-area {
+            padding: 25px;
+        }
+        
+        .content-header {
+            margin-bottom: 25px;
+        }
+        
+        .content-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .content-header p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        /* 选项卡 */
+        .nav-tabs {
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 25px;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: #666;
+            font-weight: 600;
+            padding: 12px 20px;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            color: var(--primary-color);
+            background: rgba(78,115,223,0.05);
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            background: white;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        /* 卡片 */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+            padding: 15px 20px;
+            font-weight: 700;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        /* 表格 */
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            color: #666;
+            font-size: 13px;
+            text-transform: uppercase;
+            padding: 12px 15px;
+        }
+        
+        .table td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+        
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 13px;
+        }
+        
+        /* 状态徽章 */
+        .badge-soft {
+            padding: 5px 10px;
+            font-weight: 600;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+        
+        .badge-soft-owner {
+            background: #d1fae5;
+            color: #059669;
+        }
+        
+        .badge-soft-readonly {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+        
+        /* JSON 编辑器 */
+        .jsoneditor-container {
+            height: 500px;
+            border: 1px solid #e3e6e9;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .jsoneditor {
+            border: none;
+        }
+        
+        .jsoneditor-menu {
+            background: #4e73df;
+            border-bottom: none;
+        }
+        
+        .jsoneditor-navigation-bar {
+            background: #f8f9fa;
+            border-bottom: 1px solid #e3e6e9;
+            padding: 8px 15px;
+        }
+        
+        /* 表单控件 */
+        .form-label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid #e3e6e9;
+            padding: 10px 15px;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(78,115,223,0.1);
+        }
+        
+        /* 只读模式提示 */
+        .readonly-banner {
+            background: #fff3cd;
+            color: #856404;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* 加载中 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .spinner-border {
+            width: 40px;
+            height: 40px;
+        }
+        
+        /* Toast 通知 */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+        }
+        
+        /* 隐藏元素 */
+        .d-none-important {
+            display: none !important;
+        }
+        
+        .readonly-controls {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h4 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            color: #999;
+        }
+        
+        /* 分页 */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+        
+        /* 模态框 */
+        .modal-header {
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .modal-title {
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast 通知容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <!-- 加载中覆盖层 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner-border text-primary"></div>
+    </div>
+    
+    <!-- 登录/注册页面 -->
+    <div id="authPage" class="auth-container d-none">
+        <div class="auth-card">
+            <div class="auth-header">
+                <i class="fas fa-mobile-alt"></i>
+                <h2 id="authTitle">iApp 管家</h2>
+                <p class="text-muted">移动应用管理后台</p>
+            </div>
+            
+            <!-- 登录表单 -->
+            <div id="loginForm">
+                <form class="auth-form" onsubmit="handleLogin(event)">
+                    <div class="mb-3">
+                        <label class="form-label">用户名</label>
+                        <input type="text" class="form-control" id="loginUsername" required placeholder="请输入用户名">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">密码</label>
+                        <input type="password" class="form-control" id="loginPassword" required placeholder="请输入密码">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-sign-in-alt me-2"></i>登录
+                    </button>
+                </form>
+                <div class="auth-switch">
+                    还没有账号？<a onclick="switchAuthMode('register')">立即注册</a>
+                </div>
+            </div>
+            
+            <!-- 注册表单 -->
+            <div id="registerForm" class="d-none">
+                <form class="auth-form" onsubmit="handleRegister(event)">
+                    <div class="mb-3">
+                        <label class="form-label">用户名</label>
+                        <input type="text" class="form-control" id="registerUsername" required placeholder="请输入用户名" minlength="3">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">密码</label>
+                        <input type="password" class="form-control" id="registerPassword" required placeholder="请输入密码" minlength="6">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">确认密码</label>
+                        <input type="password" class="form-control" id="registerConfirmPassword" required placeholder="请再次输入密码">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-user-plus me-2"></i>注册
+                    </button>
+                </form>
+                <div class="auth-switch">
+                    已有账号？<a onclick="switchAuthMode('login')">立即登录</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 主界面 -->
+    <div id="mainPage" class="main-wrapper d-none">
+        <!-- 侧边栏 -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-mobile-alt"></i>
+                <h3>iApp 管家</h3>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">我的应用</div>
+                <ul class="app-list" id="appList">
+                    <!-- 动态加载应用列表 -->
+                </ul>
+                <button class="create-app-btn mt-2" id="createAppBtn" onclick="showCreateAppModal()">
+                    <i class="fas fa-plus me-2"></i>创建新应用
+                </button>
+            </div>
+        </aside>
+        
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 顶部导航 -->
+            <nav class="top-navbar">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="user-menu">
+                    <div class="user-info">
+                        <span class="user-name" id="currentUserName">用户</span>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <button class="logout-btn" onclick="handleLogout()">
+                        <i class="fas fa-sign-out-alt me-1"></i>退出
+                    </button>
+                </div>
+            </nav>
+            
+            <!-- 内容区域 -->
+            <div class="content-area">
+                <div class="content-header">
+                    <h2 id="appTitle">选择应用</h2>
+                    <p id="appDesc">从左侧选择一个应用进行管理</p>
+                </div>
+                
+                <!-- 选项卡导航 -->
+                <ul class="nav-tabs nav" id="mainTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#usersTab">
+                            <i class="fas fa-users me-2"></i>子用户管理
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#versionTab">
+                            <i class="fas fa-code-branch me-2"></i>版本配置
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#announcementTab">
+                            <i class="fas fa-bullhorn me-2"></i>公告管理
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#splashTab">
+                            <i class="fas fa-image me-2"></i>启动图
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#docTab">
+                            <i class="fas fa-file-code me-2"></i>空白文档
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- 选项卡内容 -->
+                <div class="tab-content" id="mainTabContent">
+                    <!-- 子用户管理 -->
+                    <div class="tab-pane fade show active" id="usersTab">
+                        <div class="card">
+                            <div class="card-header">
+                                <span><i class="fas fa-users me-2"></i>子用户列表</span>
+                                <button class="btn btn-primary btn-sm" id="addUserBtn" onclick="showAddUserModal()">
+                                    <i class="fas fa-plus me-1"></i>添加子用户
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="usersTableContainer">
+                                    <!-- 动态加载用户列表 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 版本配置 -->
+                    <div class="tab-pane fade" id="versionTab">
+                        <div class="card">
+                            <div class="card-header">
+                                <span><i class="fas fa-code-branch me-2"></i>版本信息</span>
+                            </div>
+                            <div class="card-body">
+                                <form id="versionForm" onsubmit="handleVersionUpdate(event)">
+                                    <input type="hidden" id="versionAppUuid">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">版本号 (整数)</label>
+                                            <input type="number" class="form-control" id="versionCode" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">版本名称</label>
+                                            <input type="text" class="form-control" id="versionName" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">下载地址 (APK URL)</label>
+                                        <input type="url" class="form-control" id="downloadUrl" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">更新内容</label>
+                                        <textarea class="form-control" id="updateContent" rows="4"></textarea>
+                                    </div>
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="forceUpdate">
+                                        <label class="form-check-label">强制更新</label>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" id="saveVersionBtn">
+                                        <i class="fas fa-save me-2"></i>保存配置
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 公告管理 -->
+                    <div class="tab-pane fade" id="announcementTab">
+                        <div class="card">
+                            <div class="card-header">
+                                <span><i class="fas fa-bullhorn me-2"></i>公告列表</span>
+                                <button class="btn btn-primary btn-sm" id="addAnnouncementBtn" onclick="showAnnouncementModal()">
+                                    <i class="fas fa-plus me-1"></i>新建公告
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="announcementListContainer">
+                                    <!-- 动态加载公告列表 -->
+                                </div>
+                                <div class="pagination-container" id="announcementPagination">
+                                    <!-- 分页控件 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 启动图配置 -->
+                    <div class="tab-pane fade" id="splashTab">
+                        <div class="card">
+                            <div class="card-header">
+                                <span><i class="fas fa-image me-2"></i>启动图配置</span>
+                            </div>
+                            <div class="card-body">
+                                <form id="splashForm" onsubmit="handleSplashUpdate(event)">
+                                    <input type="hidden" id="splashAppUuid">
+                                    <div class="mb-3">
+                                        <label class="form-label">图片 URL</label>
+                                        <input type="url" class="form-control" id="splashImageUrl" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">显示时长 (毫秒)</label>
+                                        <input type="number" class="form-control" id="splashDuration" value="3000" required>
+                                        <div class="form-text">建议值：3000 (3 秒)</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">预览</label>
+                                        <div id="splashPreview" style="max-width: 300px; border: 1px solid #e3e6e9; border-radius: 8px; overflow: hidden;">
+                                            <img id="splashPreviewImg" src="" alt="预览" style="width: 100%; display: none;">
+                                            <div id="splashPreviewPlaceholder" class="p-3 text-muted text-center">
+                                                <i class="fas fa-image fa-2x"></i>
+                                                <p class="mt-2">图片预览</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" id="saveSplashBtn">
+                                        <i class="fas fa-save me-2"></i>保存配置
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 空白文档 -->
+                    <div class="tab-pane fade" id="docTab">
+                        <div class="card">
+                            <div class="card-header">
+                                <span><i class="fas fa-file-code me-2"></i>空白文档 (JSON)</span>
+                                <div>
+                                    <button class="btn btn-outline-primary btn-sm me-2" id="docFormatBtn" onclick="formatJsonDoc()">
+                                        <i class="fas fa-align-left me-1"></i>格式化
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm me-2" id="docSaveBtn" onclick="saveJsonDoc()">
+                                        <i class="fas fa-save me-1"></i>保存
+                                    </button>
+                                    <button class="btn btn-outline-warning btn-sm me-2" id="docClearBtn" onclick="clearJsonDoc()">
+                                        <i class="fas fa-trash me-1"></i>清空
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="jsonEditor" class="jsoneditor-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- 模态框：创建应用 -->
+    <div class="modal fade" id="createAppModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus me-2"></i>创建新应用</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createAppForm" onsubmit="handleCreateApp(event)">
+                        <div class="mb-3">
+                            <label class="form-label">应用名称</label>
+                            <input type="text" class="form-control" id="newAppName" required placeholder="请输入应用名称">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="handleCreateApp(event)">
+                        <i class="fas fa-check me-1"></i>创建
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 模态框：添加子用户 -->
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>添加子用户</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addUserForm" onsubmit="handleAddUser(event)">
+                        <div class="mb-3">
+                            <label class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="newSubUsername" required placeholder="请输入用户名">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">密码</label>
+                            <input type="password" class="form-control" id="newSubPassword" required placeholder="请输入密码" minlength="6">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="handleAddUser(event)">
+                        <i class="fas fa-check me-1"></i>添加
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 模态框：公告编辑 -->
+    <div class="modal fade" id="announcementModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="announcementModalTitle">
+                        <i class="fas fa-bullhorn me-2"></i>新建公告
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="announcementForm">
+                        <input type="hidden" id="announcementId">
+                        <div class="mb-3">
+                            <label class="form-label">标题</label>
+                            <input type="text" class="form-control" id="announcementTitle" required placeholder="请输入公告标题">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">内容</label>
+                            <textarea class="form-control" id="announcementContent" rows="6" required placeholder="请输入公告内容"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="handleAnnouncementSave()">
+                        <i class="fas fa-save me-1"></i>保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- JSONEditor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.10.0/jsoneditor.min.js"></script>
+    
+    <script>
+        // ==================== 全局配置 ====================
+        const API_BASE = '/iapp_api';
+        
+        // ==================== 状态管理 ====================
+        let currentState = {
+            token: localStorage.getItem('token') || null,
+            user: JSON.parse(localStorage.getItem('user') || 'null'),
+            apps: [],
+            currentApp: null,
+            jsonEditor: null,
+            announcementPage: 1,
+            announcementLimit: 10,
+        };
+        
+        // ==================== 初始化 ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            initJsonEditor();
+            checkAuth();
+        });
+        
+        // 初始化 JSON 编辑器
+        function initJsonEditor() {
+            const container = document.getElementById('jsonEditor');
+            const options = {
+                mode: 'code',
+                modes: ['code', 'tree'],
+                onError: function(err) {
+                    showToast('JSON 格式错误：' + err.message, 'danger');
+                }
+            };
+            currentState.jsonEditor = new JSONEditor(container, options);
+            currentState.jsonEditor.set({});
+        }
+        
+        // 检查登录状态
+        function checkAuth() {
+            showLoading();
+            
+            if (currentState.token && currentState.user) {
+                // 尝试加载应用列表
+                loadApps().then(() => {
+                    hideLoading();
+                    showMainPage();
+                }).catch(err => {
+                    hideLoading();
+                    console.error('Token 无效，跳转登录');
+                    showAuthPage();
+                });
+            } else {
+                hideLoading();
+                showAuthPage();
+            }
+        }
+        
+        // ==================== 认证相关 ====================
+        function switchAuthMode(mode) {
+            if (mode === 'register') {
+                document.getElementById('loginForm').classList.add('d-none');
+                document.getElementById('registerForm').classList.remove('d-none');
+                document.getElementById('authTitle').textContent = '用户注册';
+            } else {
+                document.getElementById('registerForm').classList.add('d-none');
+                document.getElementById('loginForm').classList.remove('d-none');
+                document.getElementById('authTitle').textContent = 'iApp 管家';
+            }
+        }
+        
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            showLoading();
+            
+            try {
+                const response = await apiRequest('POST', '/api/user/login', {
+                    username,
+                    password
+                });
+                
+                currentState.token = response.data.token;
+                currentState.user = {
+                    id: response.data.user_id,
+                    username: response.data.username,
+                    apps: response.data.apps
+                };
+                
+                localStorage.setItem('token', currentState.token);
+                localStorage.setItem('user', JSON.stringify(currentState.user));
+                
+                showToast('登录成功', 'success');
+                
+                // 加载应用列表
+                await loadApps();
+                hideLoading();
+                showMainPage();
+                
+            } catch (err) {
+                hideLoading();
+                showToast(err.message, 'danger');
+            }
+        }
+        
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+            
+            if (password !== confirmPassword) {
+                showToast('两次输入的密码不一致', 'warning');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                await apiRequest('POST', '/api/user/register', {
+                    username,
+                    password
+                });
+                
+                hideLoading();
+                showToast('注册成功，请登录', 'success');
+                switchAuthMode('login');
+                
+            } catch (err) {
+                hideLoading();
+                showToast(err.message, 'danger');
+            }
+        }
+        
+        function handleLogout() {
+            if (confirm('确定要退出登录吗？')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                currentState.token = null;
+                currentState.user = null;
+                currentState.apps = [];
+                currentState.currentApp = null;
+                
+                showAuthPage();
+                showToast('已退出登录', 'info');
+            }
+        }
+        
+        // ==================== 页面切换 ====================
+        function showAuthPage() {
+            document.getElementById('authPage').classList.remove('d-none');
+            document.getElementById('mainPage').classList.add('d-none');
+        }
+        
+        function showMainPage() {
+            document.getElementById('authPage').classList.add('d-none');
+            document.getElementById('mainPage').classList.remove('d-none');
+            
+            // 更新用户信息
+            if (currentState.user) {
+                document.getElementById('currentUserName').textContent = currentState.user.username;
+                document.getElementById('userAvatar').textContent = currentState.user.username.charAt(0).toUpperCase();
+            }
+            
+            // 渲染应用列表
+            renderAppList();
+            
+            // 如果有应用，选择第一个
+            if (currentState.apps.length > 0) {
+                selectApp(currentState.apps[0]);
+            }
+        }
+        
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+        }
+        
+        // ==================== 应用管理 ====================
+        async function loadApps() {
+            const response = await apiRequest('GET', '/api/app/list');
+            currentState.apps = response.data || [];
+            return currentState.apps;
+        }
+        
+        function renderAppList() {
+            const container = document.getElementById('appList');
+            
+            if (currentState.apps.length === 0) {
+                container.innerHTML = `
+                    <li class="empty-state p-3">
+                        <p class="text-muted mb-0">暂无应用</p>
+                    </li>
+                `;
+                document.getElementById('createAppBtn').classList.remove('d-none');
+                return;
+            }
+            
+            container.innerHTML = currentState.apps.map((app, index) => `
+                <li class="app-item ${currentState.currentApp && currentState.currentApp.app_uuid === app.app_uuid ? 'active' : ''}" 
+                    onclick="selectAppByIndex(${index})">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span class="app-item-name">${escapeHtml(app.app_name)}</span>
+                    <span class="app-item-role badge-soft ${app.role === 'owner' ? 'badge-soft-owner' : 'badge-soft-readonly'}">
+                        ${app.role === 'owner' ? '主账号' : '只读'}
+                    </span>
+                </li>
+            `).join('');
+            
+            // 子用户不显示创建按钮
+            const hasOwner = currentState.apps.some(app => app.role === 'owner');
+            document.getElementById('createAppBtn').classList.toggle('d-none', !hasOwner);
+        }
+        
+        function selectAppByIndex(index) {
+            selectApp(currentState.apps[index]);
+        }
+        
+        function selectApp(app) {
+            currentState.currentApp = app;
+            
+            // 更新 UI
+            document.getElementById('appTitle').textContent = app.app_name;
+            document.getElementById('appDesc').textContent = `角色：${app.role === 'owner' ? '主账号' : '只读'} | UUID: ${app.app_uuid}`;
+            
+            // 更新高亮
+            renderAppList();
+            
+            // 更新权限控制
+            updatePermissions(app.role);
+            
+            // 加载模块数据
+            loadAllModules();
+            
+            // 移动端自动关闭侧边栏
+            if (window.innerWidth < 992) {
+                document.getElementById('sidebar').classList.remove('show');
+            }
+        }
+        
+        function updatePermissions(role) {
+            const isOwner = role === 'owner';
+            
+            // 子用户管理
+            document.getElementById('addUserBtn').classList.toggle('d-none', !isOwner);
+            
+            // 版本配置
+            document.getElementById('saveVersionBtn').classList.toggle('d-none', !isOwner);
+            setFormReadonly('versionForm', !isOwner);
+            
+            // 公告管理
+            document.getElementById('addAnnouncementBtn').classList.toggle('d-none', !isOwner);
+            
+            // 启动图
+            document.getElementById('saveSplashBtn').classList.toggle('d-none', !isOwner);
+            setFormReadonly('splashForm', !isOwner);
+            
+            // 空白文档
+            document.getElementById('docSaveBtn').classList.toggle('d-none', !isOwner);
+            document.getElementById('docClearBtn').classList.toggle('d-none', !isOwner);
+            document.getElementById('docFormatBtn').classList.toggle('d-none', !isOwner);
+            
+            // 设置 JSON 编辑器只读模式
+            if (currentState.jsonEditor) {
+                currentState.jsonEditor.setOptions({
+                    mode: isOwner ? 'code' : 'view'
+                });
+            }
+        }
+        
+        function setFormReadonly(formId, readonly) {
+            const form = document.getElementById(formId);
+            const inputs = form.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                input.disabled = readonly;
+            });
+        }
+        
+        async function showCreateAppModal() {
+            const modal = new bootstrap.Modal(document.getElementById('createAppModal'));
+            document.getElementById('createAppForm').reset();
+            modal.show();
+        }
+        
+        async function handleCreateApp(event) {
+            event.preventDefault();
+            
+            const appName = document.getElementById('newAppName').value;
+            
+            showLoading();
+            
+            try {
+                const response = await apiRequest('POST', '/api/app/create', {
+                    app_name: appName
+                });
+                
+                showToast('应用创建成功', 'success');
+                
+                // 关闭模态框
+                bootstrap.Modal.getInstance(document.getElementById('createAppModal')).hide();
+                
+                // 重新加载应用列表
+                await loadApps();
+                renderAppList();
+                
+                // 选中新创建的应用
+                const newApp = currentState.apps.find(app => app.app_uuid === response.data.app_uuid);
+                if (newApp) {
+                    selectApp(newApp);
+                }
+                
+            } catch (err) {
+                showToast(err.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // ==================== 加载所有模块数据 ====================
+        function loadAllModules() {
+            if (!currentState.currentApp) return;
+            
+            loadUsers();
+            loadVersionConfig();
+            loadAnnouncements();
+            loadSplashConfig();
+            loadDoc();
+        }
+        
+        // ==================== 子用户管理 ====================
+        async function loadUsers() {
+            const container = document.getElementById('usersTableContainer');
+            
+            try {
+                // 注意：此接口需要后端配合实现
+                // 假定接口：GET /api/app/members?app_uuid=xxx
+                const response = await apiRequest('GET', `/api/app/members?app_uuid=${currentState.currentApp.app_uuid}`);
+                
+                const users = response.data || [];
+                
+                if (users.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-users"></i>
+                            <h4>暂无子用户</h4>
+                            <p>点击"添加子用户"按钮创建子用户</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>用户名</th>
+                                    <th>角色</th>
+                                    <th>加入时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${users.map(user => `
+                                    <tr>
+                                        <td>${escapeHtml(user.username)}</td>
+                                        <td>
+                                            <span class="badge badge-soft ${user.role === 'owner' ? 'badge-soft-owner' : 'badge-soft-readonly'}">
+                                                ${user.role === 'owner' ? '主账号' : '只读'}
+                                            </span>
+                                        </td>
+                                        <td>${formatDate(user.join_time)}</td>
+                                        <td>
+                                            ${user.role !== 'owner' ? `
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.id})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            ` : ''}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+            } catch (err) {
+                // 如果接口不存在，显示提示
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        该功能需要后端实现接口：<code>GET /api/app/members?app_uuid=xxx</code>
+                        <br>当前应用下子用户数量：${currentState.currentApp.role === 'owner' ? '待加载' : '只读模式'}
+                    </div>
+                `;
+            }
+        }
+        
+        function showAddUserModal() {
+            const modal = new bootstrap.Modal(document.getElementById('addUserModal'));
+            document.getElementById('addUserForm').reset();
+            modal.show();
+        }
+        
+        async function handleAddUser(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('newSubUsername').value;
+            const password = document.getElementById('newSubPassword').value;
+            
+            showLoading();
+            
+            try {
+                await apiRequest('POST', '/api/user/register_sub', {
+                    username,
+                    password,
+                    app_uuid: currentState.currentApp.app_uuid
+                });
+                
+                showToast('子用户添加成功', 'success');
+                
+                bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+                loadUsers();
+                
+            } catch (err) {
+                showToast(err.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function deleteUser(userId) {
+            if (!confirm('确定要删除该子用户吗？')) return;
+            
+            showLoading();
+            
+            try {
+                // 注意：此接口需要后端配合实现
+                // 假定接口：DELETE /api/app/member?user_id=xxx&app_uuid=xxx
+                await apiRequest('DELETE', `/api/app/member?user_id=${userId}&app_uuid=${currentState.currentApp.app_uuid}`);
+                
+                showToast('子用户已删除', 'success');
+                loadUsers();
+                
+            } catch (err) {
+                showToast('删除失败：' + err.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // ==================== 版本配置 ====================
+        async function loadVersionConfig() {
+            try {
+                const response = await apiRequest('GET', `/api/version/config?app_uuid=${currentState.currentApp.app_uuid}`);
+                const data = response.data || {};
+                
+                document.getElementById('versionAppUuid').value = currentState.currentApp.app_uuid;
+                document.getElementById('versionCode').value = data.version_code || '';
+                document.getElementById('versionName').value = data.version_name || '';
+                document.getElementById('downloadUrl').value = data.download_url || '';
+                document.getElementById('updateContent').value = data.update_content || '';
+                document.getElementById('forceUpdate').checked = data.force_update || false;
+                
+            } catch (err) {
+                console.log('版本配置加载中');
+            }
+        }
+        
+        async function handleVersionUpdate(event) {
+            event.preventDefault();
+            
+            const data = {
+                app_uuid: currentState.currentApp.app_uuid,
+                version_code: parseInt(document.getElementById('versionCode').value),
+                version_name: document.getElementById('versionName').value,
+                download_url: document.getElementById('downloadUrl').value,
+                update_content: document.getElementById('updateContent').value,
+                force_update: document.getElementById('forceUpdate').checked ? 1 : 0
+            };
+            
+            showLoading();
+            
+            try {
+                await apiRequest('POST', '/api/version/update', data);
+                showToast('版本配置已保存', 'success');
+            } catch (err) {
+                showToast(err.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // ==================== 公告管理 ====================
+        async function loadAnnouncements() {
+            const container = document.getElementById('announcementListContainer');
+            
+            try {
+                const response = await apiRequest('GET', 
+                    `/api/announcement/list?app_uuid=${currentState.currentApp.app_uuid}&page=${currentState.announcementPage}&limit=${currentState.announcementLimit}`);
+                
+                const data = response.data || { list: [], total: 0 };
+                const announcements = data.list || [];
+                
+                if (announcements.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-bullhorn"></i>
+                            <h4>暂无公告</h4>
+                            <p>点击"新建公告"按钮创建第一条公告</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40%">标题</th>
+                                        <th>创建时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${announcements.map(ann => `
+                                        <tr>
+                                            <td>
+                                                <strong>${escapeHtml(ann.title)}</strong>
+                                                <br>
+                                                <small class="text-muted">${truncateText(ann.content, 50)}</small>
+                                            </td>
+                                            <td>${formatDate(ann.create_time)}</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editAnnouncement(${ann.id}, '${escapeHtml(ann.title)}', '${escapeHtml(ann.content || '')}')">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteAnnouncement(${ann.id})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+                
+                // 分页
+                const totalPages = Math.ceil((data.total || 0) / currentState.announcementLimit);
+                renderPagination(totalPages);
+                
+            } catch (err) {
+                container.innerHTML = `<div class="alert alert-danger">加载失败：${err.message}</div>`;
+            }
+        }
+        
+        function renderPagination(totalPages) {
+            const container = document.getElementById('announcementPagination');
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = `<span class="text-muted">共 ${totalPages} 页</span><nav><ul class="pagination mb-0">`;
+            
+            for (let i = 1; i <= totalPages; i++) {
+                html += `
+                    <li class="page-item ${i === currentState.announcementPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changeAnnouncementPage(${i})">${i}</a>
+                    </li>
+                `;
+            }
+            
+            html += '</ul></nav>';
+            container.innerHTML = html;
+        }
+        
+        function changeAnnouncementPage(page) {
+            currentState.announcementPage = page;
+            loadAnnouncements();
+        }
+        
+        function showAnnouncementModal() {
+            const modal = new bootstrap.Modal(document.getElementById('announcementModal'));
+            document.getElementById('announcementForm').reset();
+            document.getElementById('announcementId').value = '';
+            document.getElementById('announcementModalTitle').innerHTML = '<i class="fas fa-bullhorn me-2"></i>新建公告';
+            modal.show();
+        }
+        
+        function editAnnouncement(id, title, content) {
+            const modal = new bootstrap.Modal(document.getElementById('announcementModal'));
+            document.getElementById('announcementId').value = id;
+            document.getElementById('announcementTitle').value = title;
+            document.getElementById('announcementContent').value = content || '';
+            document.getElementById('announcementModalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>编辑公告';
+            modal.show();
+        }
+        
+        async function handleAnnouncementSave() {
+            const id = document.getElementById('announcementId').value;
+            const title = document.getElementById('announcementTitle').value;
+            const content = document.getElementById('announcementContent').value;
+            
+            if (!title || !content) {
+                showToast('请填写标题和内容', 'warning');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                if (id) {
+                    // 更新
+                    await apiRequest('POST', '/api/announcement/update', {
+                        id: parseInt(id),
+                        title,
+                        content
+                    });
+                    showToast('公告已更新', 'success');
+                } else {
+                    // 新建
+                    await apiRequest('POST', '/api/announcement/create', {
+                        app_uuid: currentState.currentApp.app_uuid,
+                        title,
+                        content
+                    });
+                    showToast('公告已创建', 'success');
+                }
+                
+                bootstrap.Modal.getInstance(document.getElementById('announcementModal')).hide();
+                loadAnnouncements();
+                
+            } catch (err) {
+                showToast(err.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function deleteAnnouncement(id) {
+            if (!confirm('确定要删除该公告吗？')) return;
+            
+            showLoading();
+            
+            try {
+                await apiRequest('POST', '/api/announcement/delete', { id });
+                showToast('公告已删除', 'success');
+                loadAnnouncements();
+            } catch (err) {
+                showToast(err.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // ==================== 启动图配置 ====================
+        async function loadSplashConfig() {
+            try {
+                const response = await apiRequest('GET', 
+                    `/api/splash/config?app_uuid=${currentState.currentApp.app_uuid}`);
+                
+                const data = response.data || {};
+                
+                document.getElementById('splashAppUuid').value = currentState.currentApp.app_uuid;
+                document.getElementById('splashImageUrl').value = data.image_url || '';
+                document.getElementById('splashDuration').value = data.duration || 3000;
+                
+                updateSplashPreview(data.image_url || '');
+                
+            } catch (err) {
+                console.log('启动图配置加载中');
+            }
+        }
+        
+        function updateSplashPreview(url) {
+            const img = document.getElementById('splashPreviewImg');
+            const placeholder = document.getElementById('splashPreviewPlaceholder');
+            
+            if (url) {
+                img.src = url;
+                img.style.display = 'block';
+                placeholder.style.display = 'none';
+            } else {
+                img.style.display = 'none';
+                placeholder.style.display = 'block';
+            }
+        }
+        
+        async function handleSplashUpdate(event) {
+            event.preventDefault();
+            
+            const data = {
+                app_uuid: currentState.currentApp.app_uuid,
+                image_url: document.getElementById('splashImageUrl').value,
+                duration: parseInt(document.getElementById('splashDuration').value)
+            };
+            
+            showLoading();
+            
+            try {
+                await apiRequest('POST', '/api/splash/config', data);
+                showToast('启动图配置已保存', 'success');
+                updateSplashPreview(data.image_url);
+            } catch (err) {
+                showToast(err.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // ==================== 空白文档 ====================
+        async function loadDoc() {
+            try {
+                const response = await apiRequest('GET', 
+                    `/api/doc/get?app_uuid=${currentState.currentApp.app_uuid}`);
+                
+                const data = response.data || {};
+                currentState.jsonEditor.set(data);
+                
+            } catch (err) {
+                currentState.jsonEditor.set({});
+            }
+        }
+        
+        function formatJsonDoc() {
+            try {
+                const json = currentState.jsonEditor.get();
+                currentState.jsonEditor.set(json);
+                showToast('格式化完成', 'success');
+            } catch (err) {
+                showToast('JSON 格式错误', 'danger');
+            }
+        }
+        
+        async function saveJsonDoc() {
+            showLoading();
+            
+            try {
+                const data = currentState.jsonEditor.get();
+                
+                await apiRequest('POST', '/api/doc/set', {
+                    app_uuid: currentState.currentApp.app_uuid,
+                    data: data
+                });
+                
+                showToast('文档已保存', 'success');
+            } catch (err) {
+                showToast(err.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        async function clearJsonDoc() {
+            if (!confirm('确定要清空文档吗？此操作不可恢复。')) return;
+            
+            showLoading();
+            
+            try {
+                await apiRequest('POST', '/api/doc/clear', {
+                    app_uuid: currentState.currentApp.app_uuid
+                });
+                
+                currentState.jsonEditor.set({});
+                showToast('文档已清空', 'success');
+            } catch (err) {
+                showToast(err.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // ==================== 工具函数 ====================
+        async function apiRequest(method, path, data = null) {
+            const url = API_BASE + path;
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+            
+            if (currentState.token) {
+                options.headers['Authorization'] = `Bearer ${currentState.token}`;
+            }
+            
+            if (data && method !== 'GET') {
+                options.body = JSON.stringify(data);
+            }
+            
+            const response = await fetch(url, options);
+            const result = await response.json();
+            
+            // 处理 401 未授权
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.reload();
+                throw new Error('登录已过期，请重新登录');
+            }
+            
+            // 处理错误
+            if (result.code !== 200) {
+                throw new Error(result.message || '请求失败');
+            }
+            
+            return result;
+        }
+        
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+        
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const colors = {
+                success: 'bg-success',
+                danger: 'bg-danger',
+                warning: 'bg-warning',
+                info: 'bg-info'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = `toast show ${colors[type] || colors.info} text-white`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="toast-body d-flex justify-content-between align-items-center">
+                    <span>${message}</span>
+                    <button type="button" class="btn-close btn-close-white" onclick="this.parentElement.parentElement.remove()"></button>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            
+            // 3 秒后自动移除
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 3000);
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function truncateText(text, length) {
+            if (!text) return '';
+            return text.length > length ? text.substring(0, length) + '...' : text;
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleString('zh-CN');
+        }
+    </script>
+</body>
+</html>
