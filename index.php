@@ -4,27 +4,35 @@
  * 所有请求通过此文件路由分发
  */
 
-// 错误报告（生产环境建议关闭）
+// 错误报告（调试模式开启）
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
+ini_set('display_errors', 1);
+
+// 关闭输出缓冲
+while (ob_get_level()) {
+    ob_end_clean();
+}
 
 // 设置时区
 date_default_timezone_set('Asia/Shanghai');
 
-// 自动加载类
-spl_autoload_register(function ($class) {
-    $dirs = ['core', 'controllers', 'models', 'utils'];
-    foreach ($dirs as $dir) {
-        $file = __DIR__ . '/' . $dir . '/' . $class . '.php';
-        if (file_exists($file)) {
-            require_once $file;
-            return;
-        }
-    }
-});
+header('Content-Type: application/json; charset=utf-8');
 
-// 路由配置
-$router = new Router('/api');
+try {
+    // 自动加载类
+    spl_autoload_register(function ($class) {
+        $dirs = ['core', 'controllers', 'models', 'utils'];
+        foreach ($dirs as $dir) {
+            $file = __DIR__ . '/' . $dir . '/' . $class . '.php';
+            if (file_exists($file)) {
+                require_once $file;
+                return;
+            }
+        }
+    });
+    
+    // 路由配置
+    $router = new Router('/api');
 
 // 用户相关路由
 $router->post('/user/register', function() {
@@ -120,6 +128,15 @@ $router->post('/doc/clear', function() {
 
 // 分发请求
 $router->dispatch();
+
+} catch (Exception $e) {
+    echo json_encode([
+        'code' => 500,
+        'message' => '错误：' . $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+    ], JSON_UNESCAPED_UNICODE);
+}
     
     // Controllers 目录
     $controllerFile = __DIR__ . '/controllers/' . $class . '.php';
