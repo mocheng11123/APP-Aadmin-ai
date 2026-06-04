@@ -11,6 +11,11 @@ ini_set('display_errors', 0);
 // 设置时区
 date_default_timezone_set('Asia/Shanghai');
 
+// IIS 重写兼容：获取重写后的路径
+$uri = isset($_SERVER['HTTP_X_ORIGINAL_URL']) 
+    ? parse_url($_SERVER['HTTP_X_ORIGINAL_URL'], PHP_URL_PATH)
+    : (isset($_SERVER['REQUEST_URI']) ? parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) : '/');
+
 // 自动加载类
 spl_autoload_register(function ($class) {
     // Core 目录
@@ -43,7 +48,7 @@ spl_autoload_register(function ($class) {
 });
 
 // 路由配置
-$router = new Router('/api');
+$router = new Router('/iapp_api');
 
 // 用户相关路由
 $router->post('/user/register', function() {
@@ -152,4 +157,4 @@ $router->post('/doc/clear', function() {
 });
 
 // 分发请求
-$router->dispatch();
+$router->dispatch($uri);

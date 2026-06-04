@@ -82,14 +82,28 @@ class Router
 
     /**
      * 路由分发
+     *
+     * @param string|null $uri 可选的 URI，如果为 null 则从 $_SERVER 获取
      */
-    public function dispatch()
+    public function dispatch($uri = null)
     {
         $method = $_SERVER['REQUEST_METHOD'];
-        $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        
+        if ($uri === null) {
+            $uri = isset($_SERVER['HTTP_X_ORIGINAL_URL']) 
+                ? $_SERVER['HTTP_X_ORIGINAL_URL']
+                : (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '/');
+        }
         
         // URL 解码
         $uri = urldecode($uri);
+        
+        // 提取 PATH_INFO（重写后的路径）
+        if (strpos($uri, '/api/') === 0) {
+            $uri = substr($uri, 4); // 保持/api 前缀
+        } elseif (isset($_SERVER['PATH_INFO'])) {
+            $uri = $_SERVER['PATH_INFO'];
+        }
         
         foreach ($this->routes as $route) {
             if ($route['method'] !== $method && $method !== 'OPTIONS') {
