@@ -916,8 +916,25 @@
     
     <script>
         // ==================== 全局配置 ====================
-        // 注意：由于虚拟主机不支持 .htaccess，所有 API 请求需要通过 index.php 入口
-        const API_BASE = '/iapp_api/index.php';
+        // Windows IIS 环境，直接使用独立 API 文件（不使用路由）
+        const API_BASE = '/iapp_api';
+        
+        // API 端点映射（直接访问文件）
+        const API_ENDPOINTS = {
+            user: {
+                register: '/login_test.php',  // 临时使用测试文件
+                register_sub: '/api_user.php',
+                login: '/login_test.php',
+                logout: '/api_user.php',
+                info: '/api_user.php',
+            },
+            app: {
+                create: '/api_app.php',
+                list: '/api_app.php',
+                members: '/api_app.php',
+            },
+            // ... 其他接口后续创建对应文件
+        };
         
         // ==================== 状态管理 ====================
         let currentState = {
