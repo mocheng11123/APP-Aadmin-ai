@@ -4,6 +4,7 @@ require_once __DIR__ . '/../utils/Response.php';
 /**
  * 路由解析类
  * 支持路径参数匹配，如 /api/announcement/detail/{id}
+ * 兼容 IIS/Apache/Nginx
  */
 class Router
 {
@@ -17,9 +18,6 @@ class Router
 
     /**
      * 注册 GET 路由
-     *
-     * @param string   $path
-     * @param callable $handler
      */
     public function get($path, $handler)
     {
@@ -28,9 +26,6 @@ class Router
 
     /**
      * 注册 POST 路由
-     *
-     * @param string   $path
-     * @param callable $handler
      */
     public function post($path, $handler)
     {
@@ -38,22 +33,13 @@ class Router
     }
 
     /**
-     * 注册 PUT 路由
-     *
-     * @param string   $path
-     * @param callable $handler
+     * 注册 PUT/DELETE 路由
      */
     public function put($path, $handler)
     {
         $this->addRoute('PUT', $path, $handler);
     }
 
-    /**
-     * 注册 DELETE 路由
-     *
-     * @param string   $path
-     * @param callable $handler
-     */
     public function delete($path, $handler)
     {
         $this->addRoute('DELETE', $path, $handler);
@@ -61,15 +47,10 @@ class Router
 
     /**
      * 添加路由
-     *
-     * @param string   $method
-     * @param string   $path
-     * @param callable $handler
      */
     private function addRoute($method, $path, $handler)
     {
         $fullPath = $this->basePath ? $this->basePath . $path : $path;
-        // 将路径参数 {param} 转换为正则表达式
         $pattern = preg_replace('/\{([a-zA-Z_]+)\}/', '(?P<$1>[^/]+)', $fullPath);
         $pattern = '#^' . $pattern . '$#';
         
@@ -87,42 +68,21 @@ class Router
     {
         $method = $_SERVER['REQUEST_METHOD'];
         
-        // 获取请求路径（支持多种服务器环境）
-        $requestUri = '';
+        // 从 REQUEST_URI 提取路径（兼容所有服务器）
+        $uri = $this->getRequestUri();
         
-        if (isset($_SERVER['HTTP_X_ORIGINAL_URL'])) {
-            // IIS 重写
-            $requestUri = $_SERVER['HTTP_X_ORIGINAL_URL'];
-        } elseif (isset($_SERVER['HTTP_X_REWRITE_URL'])) {
-            // IIS ISAPI 重写
-            $requestUri = $_SERVER['HTTP_X_REWRITE_URL'];
-        } elseif (isset($_SERVER['REQUEST_URI'])) {
-            // Apache/Nginx
-            $requestUri = $_SERVER['REQUEST_URI'];
-        } elseif (isset($_SERVER['PATH_INFO'])) {
-            // CGI 模式
-            $requestUri = $_SERVER['PATH_INFO'];
-        } else {
-            // 直接访问 index.php，没有 API 路径
-            Response::notFound('请使用 API 接口，例如：/api/user/login');
-            return;
+        // 移除查询字符串
+        if (($pos = strpos($uri, '?')) !== false) {
+            $uri = substr($uri, 0, $pos);
         }
-        
-        // 解析路径
-        $uri = parse_url($requestUri, PHP_URL_PATH);
         
         // URL 解码
         $uri = urldecode($uri);
         
-        // 移除脚本路径
-        $scriptName = dirname($_SERVER['SCRIPT_NAME']);
-        if ($scriptName !== '/' && strpos($uri, $scriptName) === 0) {
-            $uri = substr($uri, strlen($scriptName));
-        }
-        
-        // 如果没有/api 前缀，尝试从 PATH_INFO 获取
-        if (strpos($uri, '/api') !== 0 && isset($_SERVER['PATH_INFO'])) {
-            $uri = '/api' . $_SERVER['PATH_INFO'];
+        // 移除脚本路径前缀 (如 /iapp_api)
+        $scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+        if ($scriptDir && strpos($uri, $scriptDir) === 0) {
+            $uri = substr($uri, strlen($scriptDir));
         }
         
         foreach ($this->routes as $route) {
@@ -131,13 +91,9 @@ class Router
             }
             
             if (preg_match($route['pattern'], $uri, $matches)) {
-                // 提取路径参数
                 $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
-                
-                // 调用处理函数
                 $result = call_user_func($route['handler'], $params);
                 
-                // 如果返回的是数组，输出 JSON
                 if (is_array($result)) {
                     Response::send(
                         $result['code'] ?? 200,
@@ -149,7 +105,36 @@ class Router
             }
         }
         
-        // 未找到匹配路由
         Response::notFound('接口不存在：' . $method . ' ' . $uri);
+    }
+    
+    /**
+     * 获取请求 URI（兼容 IIS/Apache/Nginx）
+     */
+    private function getRequestUri()
+    {
+        // IIS: HTTP_X_ORIGINAL_URL 或 HTTP_X_REWRITE_URL
+        if (isset($_SERVER['HTTP_X_ORIGINAL_URL'])) {
+            return $_SERVER['HTTP_X_ORIGINAL_URL'];
+        }
+        if (isset($_SERVER['HTTP_X_REWRITE_URL'])) {
+            return $_SERVER['HTTP_X_REWRITE_URL'];
+        }
+        
+        // Apache/Nginx: REQUEST_URI
+        if (isset($_SERVER['REQUEST_URI'])) {
+            return $_SERVER['REQUEST_URI'];
+        }
+        
+        // Fallback: 拼接 PATH_INFO
+        if (isset($_SERVER['PHP_SELF'])) {
+            $uri = $_SERVER['PHP_SELF'];
+            if (isset($_SERVER['PATH_INFO'])) {
+                $uri .= $_SERVER['PATH_INFO'];
+            }
+            return $uri;
+        }
+        
+        return '/';
     }
 }

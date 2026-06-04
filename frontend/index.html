@@ -916,25 +916,8 @@
     
     <script>
         // ==================== 全局配置 ====================
-        // Windows IIS 环境，直接使用独立 API 文件（不使用路由）
+        // IIS + web.config 路由方案
         const API_BASE = '/iapp_api';
-        
-        // API 端点映射（直接访问文件）
-        const API_ENDPOINTS = {
-            user: {
-                register: '/login_test.php',  // 临时使用测试文件
-                register_sub: '/api_user.php',
-                login: '/login_test.php',
-                logout: '/api_user.php',
-                info: '/api_user.php',
-            },
-            app: {
-                create: '/api_app.php',
-                list: '/api_app.php',
-                members: '/api_app.php',
-            },
-            // ... 其他接口后续创建对应文件
-        };
         
         // ==================== 状态管理 ====================
         let currentState = {
@@ -1709,10 +1692,7 @@
         
         // ==================== API 请求函数 ====================
         async function apiRequest(method, path, data = null) {
-            // 将路由路径转换为 action 参数形式
-            // 例如：POST /api/user/login → /api_user.php?action=login
-            const url = convertPathToActionUrl(path);
-            
+            const url = API_BASE + path;
             const options = {
                 method,
                 headers: {
@@ -1728,7 +1708,7 @@
                 options.body = JSON.stringify(data);
             }
             
-            const response = await fetch(API_BASE + url, options);
+            const response = await fetch(url, options);
             const result = await response.json();
             
             // 处理 401 未授权
@@ -1745,42 +1725,6 @@
             }
             
             return result;
-        }
-        
-        // 将路由路径转换为 action 参数 URL
-        function convertPathToActionUrl(path) {
-            // 用户相关
-            if (path.startsWith('/api/user/')) {
-                const action = path.replace('/api/user/', '');
-                return `/api_user.php?action=${action}`;
-            }
-            // 应用相关
-            if (path.startsWith('/api/app/')) {
-                const action = path.replace('/api/app/', '');
-                return `/api_app.php?action=${action}`;
-            }
-            // 版本相关
-            if (path.startsWith('/api/version/')) {
-                const action = path.replace('/api/version/', '');
-                return `/api_version.php?action=${action}`;
-            }
-            // 公告相关
-            if (path.startsWith('/api/announcement/')) {
-                const action = path.replace('/api/announcement/', '');
-                return `/api_announcement.php?action=${action}`;
-            }
-            // 启动图
-            if (path.startsWith('/api/splash/')) {
-                const action = path.replace('/api/splash/', '');
-                return `/api_splash.php?action=${action}`;
-            }
-            // 文档
-            if (path.startsWith('/api/doc/')) {
-                const action = path.replace('/api/doc/', '');
-                return `/api_doc.php?action=${action}`;
-            }
-            // 默认返回原路径（用于 GET 查询参数）
-            return path.replace('/api', '');
         }
         
         function showLoading() {
