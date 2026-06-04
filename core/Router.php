@@ -113,7 +113,7 @@ class Router
      */
     private function getRequestUri()
     {
-        // IIS: HTTP_X_ORIGINAL_URL 或 HTTP_X_REWRITE_URL
+        // IIS: HTTP_X_ORIGINAL_URL 或 HTTP_X_REWRITE_URL（如果重写模块设置了）
         if (isset($_SERVER['HTTP_X_ORIGINAL_URL'])) {
             return $_SERVER['HTTP_X_ORIGINAL_URL'];
         }
@@ -121,7 +121,8 @@ class Router
             return $_SERVER['HTTP_X_REWRITE_URL'];
         }
         
-        // Apache/Nginx: REQUEST_URI
+        // IIS 重写后的 REQUEST_URI（包含重写后的路径）
+        // 或 Apache/Nginx 的 REQUEST_URI
         if (isset($_SERVER['REQUEST_URI'])) {
             return $_SERVER['REQUEST_URI'];
         }
