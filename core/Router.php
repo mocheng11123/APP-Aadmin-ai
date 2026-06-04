@@ -102,6 +102,10 @@ class Router
         } elseif (isset($_SERVER['PATH_INFO'])) {
             // CGI 模式
             $requestUri = $_SERVER['PATH_INFO'];
+        } else {
+            // 直接访问 index.php，没有 API 路径
+            Response::notFound('请使用 API 接口，例如：/api/user/login');
+            return;
         }
         
         // 解析路径
@@ -114,6 +118,11 @@ class Router
         $scriptName = dirname($_SERVER['SCRIPT_NAME']);
         if ($scriptName !== '/' && strpos($uri, $scriptName) === 0) {
             $uri = substr($uri, strlen($scriptName));
+        }
+        
+        // 如果没有/api 前缀，尝试从 PATH_INFO 获取
+        if (strpos($uri, '/api') !== 0 && isset($_SERVER['PATH_INFO'])) {
+            $uri = '/api' . $_SERVER['PATH_INFO'];
         }
         
         foreach ($this->routes as $route) {

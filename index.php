@@ -12,6 +12,9 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// 输出缓冲区清理，防止空白
+ob_end_clean();
+
 // 设置时区
 date_default_timezone_set('Asia/Shanghai');
 
