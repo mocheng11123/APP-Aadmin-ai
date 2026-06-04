@@ -916,8 +916,30 @@
     
     <script>
         // ==================== 全局配置 ====================
-        // IIS + web.config 路由方案
+        // IIS 不支持 URL Rewrite，使用 action 参数模式
         const API_BASE = '/iapp_api';
+        
+        // API 路由转换为 action 参数
+        function buildApiUrl(path) {
+            // 提取路径中的模块和操作
+            // 例如：/api/user/register → /api_user.php?action=register
+            const parts = path.replace('/api/', '').split('/');
+            if (parts.length >= 2) {
+                const module = parts[0];  // user, app, version, etc.
+                const action = parts.slice(1).join('/');  // register, login, etc.
+                // 处理带参数的路径（如 announcement/detail/1）
+                const actionParts = action.split('/');
+                const baseAction = actionParts[0];
+                const params = actionParts.slice(1);
+                
+                let url = `/api_${module}.php?action=${baseAction}`;
+                if (params.length > 0) {
+                    url += '&' + params.map((p, i) => `param${i}=${encodeURIComponent(p)}`).join('&');
+                }
+                return url;
+            }
+            return path;
+        }
         
         // ==================== 状态管理 ====================
         let currentState = {
@@ -1692,7 +1714,7 @@
         
         // ==================== API 请求函数 ====================
         async function apiRequest(method, path, data = null) {
-            const url = API_BASE + path;
+            const url = API_BASE + buildApiUrl(path);
             const options = {
                 method,
                 headers: {
