@@ -1,5 +1,5 @@
 # iApp 管家 API URL 重写配置
-# 将所有请求指向 index.php
+# 放置在 iapp_api 目录下
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
@@ -9,18 +9,18 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
 
-    # 所有其他请求转发到 index.php
-    RewriteRule ^(.*)$ index.php/$1 [L,QSA]
+    # 所有 API 请求转发到 index.php
+    RewriteRule ^api/(.*)$ index.php/api/$1 [L,QSA]
 </IfModule>
 
-# 安全设置
+# 安全设置 - 禁止直接访问敏感文件
 <FilesMatch "^\.">
     Order allow,deny
     Deny from all
 </FilesMatch>
 
-# 禁止访问配置文件
-<FilesMatch "^(config|core|controllers|models|utils)\.php$">
+# 禁止直接访问 PHP 源文件（强制通过 index.php 路由）
+<FilesMatch "^(database\.php|app\.php|DB\.php|Router\.php|Controller\.php|Model\.php|Auth\.php|Response\.php|Validator\.php)$">
     Order allow,deny
     Deny from all
 </FilesMatch>
