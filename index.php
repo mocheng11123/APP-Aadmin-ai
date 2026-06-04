@@ -2,19 +2,18 @@
 /**
  * iApp 管家 API 入口
  * 所有请求通过此文件路由分发
+ * 
+ * 支持的路径格式：
+ * 1. /iapp_api/index.php/api/user/login (直接访问)
+ * 2. /iapp_api/api/user/login (URL 重写)
  */
 
-// 错误报告（生产环境建议关闭）
+// 错误报告（调试时开启）
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
+ini_set('display_errors', 1);
 
 // 设置时区
 date_default_timezone_set('Asia/Shanghai');
-
-// IIS 重写兼容：获取重写后的路径
-$uri = isset($_SERVER['HTTP_X_ORIGINAL_URL']) 
-    ? parse_url($_SERVER['HTTP_X_ORIGINAL_URL'], PHP_URL_PATH)
-    : (isset($_SERVER['REQUEST_URI']) ? parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) : '/');
 
 // 自动加载类
 spl_autoload_register(function ($class) {
@@ -48,7 +47,7 @@ spl_autoload_register(function ($class) {
 });
 
 // 路由配置
-$router = new Router('/iapp_api');
+$router = new Router();
 
 // 用户相关路由
 $router->post('/user/register', function() {
@@ -157,4 +156,4 @@ $router->post('/doc/clear', function() {
 });
 
 // 分发请求
-$router->dispatch($uri);
+$router->dispatch();

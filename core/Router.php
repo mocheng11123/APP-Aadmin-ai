@@ -68,9 +68,9 @@ class Router
      */
     private function addRoute($method, $path, $handler)
     {
-        $path = $this->basePath . $path;
+        $fullPath = $this->basePath ? $this->basePath . $path : $path;
         // 将路径参数 {param} 转换为正则表达式
-        $pattern = preg_replace('/\{([a-zA-Z_]+)\}/', '(?P<$1>[^/]+)', $path);
+        $pattern = preg_replace('/\{([a-zA-Z_]+)\}/', '(?P<$1>[^/]+)', $fullPath);
         $pattern = '#^' . $pattern . '$#';
         
         $this->routes[] = [
@@ -82,27 +82,38 @@ class Router
 
     /**
      * 路由分发
-     *
-     * @param string|null $uri 可选的 URI，如果为 null 则从 $_SERVER 获取
      */
-    public function dispatch($uri = null)
+    public function dispatch()
     {
         $method = $_SERVER['REQUEST_METHOD'];
         
-        if ($uri === null) {
-            $uri = isset($_SERVER['HTTP_X_ORIGINAL_URL']) 
-                ? $_SERVER['HTTP_X_ORIGINAL_URL']
-                : (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '/');
+        // 获取请求路径（支持多种服务器环境）
+        $requestUri = '';
+        
+        if (isset($_SERVER['HTTP_X_ORIGINAL_URL'])) {
+            // IIS 重写
+            $requestUri = $_SERVER['HTTP_X_ORIGINAL_URL'];
+        } elseif (isset($_SERVER['HTTP_X_REWRITE_URL'])) {
+            // IIS ISAPI 重写
+            $requestUri = $_SERVER['HTTP_X_REWRITE_URL'];
+        } elseif (isset($_SERVER['REQUEST_URI'])) {
+            // Apache/Nginx
+            $requestUri = $_SERVER['REQUEST_URI'];
+        } elseif (isset($_SERVER['PATH_INFO'])) {
+            // CGI 模式
+            $requestUri = $_SERVER['PATH_INFO'];
         }
+        
+        // 解析路径
+        $uri = parse_url($requestUri, PHP_URL_PATH);
         
         // URL 解码
         $uri = urldecode($uri);
         
-        // 提取 PATH_INFO（重写后的路径）
-        if (strpos($uri, '/api/') === 0) {
-            $uri = substr($uri, 4); // 保持/api 前缀
-        } elseif (isset($_SERVER['PATH_INFO'])) {
-            $uri = $_SERVER['PATH_INFO'];
+        // 移除脚本路径
+        $scriptName = dirname($_SERVER['SCRIPT_NAME']);
+        if ($scriptName !== '/' && strpos($uri, $scriptName) === 0) {
+            $uri = substr($uri, strlen($scriptName));
         }
         
         foreach ($this->routes as $route) {
@@ -130,6 +141,6 @@ class Router
         }
         
         // 未找到匹配路由
-        Response::notFound('接口不存在');
+        Response::notFound('接口不存在：' . $method . ' ' . $uri);
     }
 }
