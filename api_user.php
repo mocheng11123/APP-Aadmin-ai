@@ -1,11 +1,17 @@
 <?php
 /**
  * 用户相关 API
+ * 使用 action 参数路由
  */
 header('Content-Type: application/json; charset=utf-8');
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
+
+// 禁用输出缓冲
+while (ob_get_level()) {
+    ob_end_clean();
+}
 
 // 加载必要的类
 require_once __DIR__ . '/core/DB.php';
@@ -33,14 +39,14 @@ try {
             handleInfo();
             break;
         default:
-            echo json_encode(['code' => 404, 'message' => '未知操作']);
+            outputJson(['code' => 404, 'message' => '未知操作：' . $action]);
     }
 } catch (Exception $e) {
-    echo json_encode([
+    outputJson([
         'code' => 500,
         'message' => '服务器错误：' . $e->getMessage(),
         'data' => null
-    ], JSON_UNESCAPED_UNICODE);
+    ]);
 }
 
 function getJsonInput() {
@@ -48,10 +54,14 @@ function getJsonInput() {
     return json_decode($input, true) ?: [];
 }
 
+function outputJson($data) {
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 function handleLogin() {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        echo json_encode(['code' => 400, 'message' => '请使用 POST 方法']);
-        return;
+        outputJson(['code' => 400, 'message' => '请使用 POST 方法']);
     }
     
     $data = getJsonInput();
@@ -59,16 +69,15 @@ function handleLogin() {
     
     // 验证
     if ($error = Validator::required($data['username'] ?? null, '用户名')) {
-        echo json_encode(['code' => 400, 'message' => $error]); return;
+        outputJson(['code' => 400, 'message' => $error]);
     }
     if ($error = Validator::required($data['password'] ?? null, '密码')) {
-        echo json_encode(['code' => 400, 'message' => $error]); return;
+        outputJson(['code' => 400, 'message' => $error]);
     }
     
     $user = $userModel->findByUsername(trim($data['username']));
     if (!$user || !$userModel->verifyPassword($data['password'], $user['password'])) {
-        echo json_encode(['code' => 400, 'message' => '用户名或密码错误']);
-        return;
+        outputJson(['code' => 400, 'message' => '用户名或密码错误']);
     }
     
     $auth = new Auth();
@@ -76,7 +85,7 @@ function handleLogin() {
     $apps = $userModel->getUserApps($user['id']);
     $config = require __DIR__ . '/config/app.php';
     
-    echo json_encode([
+    outputJson([
         'code' => 200,
         'message' => '登录成功',
         'data' => [
@@ -86,44 +95,41 @@ function handleLogin() {
             'username' => $user['username'],
             'apps' => $apps,
         ]
-    ], JSON_UNESCAPED_UNICODE);
+    ]);
 }
 
 function handleRegister() {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        echo json_encode(['code' => 400, 'message' => '请使用 POST 方法']);
-        return;
+        outputJson(['code' => 400, 'message' => '请使用 POST 方法']);
     }
     
     $data = getJsonInput();
     $userModel = new UserModel();
     
     if ($error = Validator::required($data['username'] ?? null, '用户名')) {
-        echo json_encode(['code' => 400, 'message' => $error]); return;
+        outputJson(['code' => 400, 'message' => $error]);
     }
     if ($error = Validator::minLength($data['password'] ?? null, 6, '密码')) {
-        echo json_encode(['code' => 400, 'message' => $error]); return;
+        outputJson(['code' => 400, 'message' => $error]);
     }
     if ($userModel->usernameExists(trim($data['username']))) {
-        echo json_encode(['code' => 400, 'message' => '用户名已存在']);
-        return;
+        outputJson(['code' => 400, 'message' => '用户名已存在']);
     }
     
     $userModel->create(trim($data['username']), $data['password']);
-    echo json_encode(['code' => 200, 'message' => '注册成功']);
+    outputJson(['code' => 200, 'message' => '注册成功']);
 }
 
 function handleRegisterSub() {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        echo json_encode(['code' => 400, 'message' => '请使用 POST 方法']);
-        return;
+        outputJson(['code' => 400, 'message' => '请使用 POST 方法']);
     }
     
     $auth = new Auth();
-    $owner = $auth->verifyToken($auth->getTokenFromHeader());
+    $token = $auth->getTokenFromHeader();
+    $owner = $auth->verifyToken($token);
     if (!$owner) {
-        echo json_encode(['code' => 401, 'message' => '未授权']);
-        return;
+        outputJson(['code' => 401, 'message' => '未授权']);
     }
     
     $data = getJsonInput();
@@ -131,33 +137,30 @@ function handleRegisterSub() {
     $appModel = new AppModel();
     
     if ($error = Validator::required($data['username'] ?? null, '用户名')) {
-        echo json_encode(['code' => 400, 'message' => $error]); return;
+        outputJson(['code' => 400, 'message' => $error]);
     }
     if ($error = Validator::required($data['app_uuid'] ?? null, 'app_uuid')) {
-        echo json_encode(['code' => 400, 'message' => $error]); return;
+        outputJson(['code' => 400, 'message' => $error]);
     }
     
     if ($userModel->usernameExists(trim($data['username']))) {
-        echo json_encode(['code' => 400, 'message' => '用户名已存在']);
-        return;
+        outputJson(['code' => 400, 'message' => '用户名已存在']);
     }
     
     $app = $appModel->findByUuid($data['app_uuid']);
     if (!$app) {
-        echo json_encode(['code' => 404, 'message' => '应用不存在']);
-        return;
+        outputJson(['code' => 404, 'message' => '应用不存在']);
     }
     
     $role = $appModel->getUserRole($owner['id'], $app['id']);
     if ($role !== 'owner') {
-        echo json_encode(['code' => 403, 'message' => '无权创建子用户']);
-        return;
+        outputJson(['code' => 403, 'message' => '无权创建子用户']);
     }
     
     $subUserId = $userModel->create(trim($data['username']), $data['password']);
     $appModel->addUserToApp($subUserId, $app['id'], 'readonly');
     
-    echo json_encode(['code' => 200, 'message' => '子用户创建成功']);
+    outputJson(['code' => 200, 'message' => '子用户创建成功']);
 }
 
 function handleLogout() {
@@ -167,15 +170,15 @@ function handleLogout() {
     if ($user) {
         $auth->logout($user['id']);
     }
-    echo json_encode(['code' => 200, 'message' => '退出成功']);
+    outputJson(['code' => 200, 'message' => '退出成功']);
 }
 
 function handleInfo() {
     $auth = new Auth();
-    $user = $auth->verifyToken($auth->getTokenFromHeader());
+    $token = $auth->getTokenFromHeader();
+    $user = $auth->verifyToken($token);
     if (!$user) {
-        echo json_encode(['code' => 401, 'message' => '未授权']);
-        return;
+        outputJson(['code' => 401, 'message' => '未授权']);
     }
     
     $userModel = new UserModel();
@@ -183,5 +186,5 @@ function handleInfo() {
     $userInfo['apps'] = $userModel->getUserApps($user['id']);
     unset($userInfo['password'], $userInfo['token'], $userInfo['token_expire']);
     
-    echo json_encode(['code' => 200, 'message' => '成功', 'data' => $userInfo], JSON_UNESCAPED_UNICODE);
+    outputJson(['code' => 200, 'message' => '成功', 'data' => $userInfo]);
 }
